@@ -1,0 +1,6 @@
+- src: https://github.com/automaticdavid/azure
+  version: devel
+  name: azure
+- src: https://github.com/automaticdavid/is_it_cat
+  version: master
+  name: is_it_cat

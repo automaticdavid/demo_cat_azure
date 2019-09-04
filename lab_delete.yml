@@ -1,0 +1,9 @@
+---
+- name: Delete all azure VMs of a given scope
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Include role taks to delete Azure Lab
+      include_role: 
+        name: azure
+        tasks_from: azure_env_destroy
