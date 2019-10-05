@@ -1,6 +1,5 @@
 .DS_Store
 .vscode
 .retry
-**/*.vault
 **/*.secrets.yml
 **/*.secrets.txt
