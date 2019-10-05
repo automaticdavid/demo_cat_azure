@@ -1,0 +1,12 @@
+fields:
+  - id: ssh_username
+    type: string
+    label: SSH Username
+  - id: ssh_key
+    type: string
+    label: SSH Public Key
+    secret: true
+required:
+  - ssh_username
+  - ssh_key
+

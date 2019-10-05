@@ -1,0 +1,4 @@
+extra_vars:
+  ssh_key: '{{ ssh_key }}'
+  ssh_username: '{{ ssh_username }}'
+

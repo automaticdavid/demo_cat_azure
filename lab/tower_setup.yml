@@ -1,0 +1,181 @@
+---
+- name: Setup Demo in Tower
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+
+    tower_username: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62626435643833356565323333623265393263613266323937326262643662303066376665353431
+          6362313866653335636165613437633033326534393464300a653165336361363436363030393037
+          64653635653866323461336138663936636232663430323866313166303463353361383030376535
+          3338346634643237640a613538346537663931353833626337376661333137383364356339663131
+          3164
+    tower_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36343266333332356461623337616430303462656534643534663064383338313234336431333033
+          3336383163353635646466323662643737333862383430610a643461646563643237333834326264
+          66643130666666643639316664383830633734663935316366383832366435623931663530313037
+          6330613936383235310a346562326232373130343964356339383038316333623865336165316433
+          6231
+    tower_hostname: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          32666339633038623066383834363332613632393134633830346536386536366466316434626638
+          3038613834393435323531313163316438396433333537380a393464646232643538623263393734
+          63343430343938633165366666323430366165616331353538326636666339666163333435386266
+          6238363138653536610a353663303034323930306233653938643366326632356132613964633436
+          3235
+    azure_subscription: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62653135646534356165623766393836653563383538323263366464306534326238313063396430
+          6439363165316233656263316436616535373964613437620a306265626539346334653932326330
+          31616234663435643332623263346135396431303538626131333234633464323334613137393231
+          3133653937366239390a353865346133636331613666633230393634303836383234636235613866
+          62316563376666373033646637643130663361326262656233653235643337343630356631363666
+          6138313238313566623634303937386464353830373366303039
+    azure_username: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          30376132623537636533393966333836376235303539303138373032366430366263623736323865
+          3331373466336333626239303861653431356562383261390a336438383637383561376134656638
+          33656634393737343362313138393232316161343963356365646663613637623132373465313234
+          3535353539656466650a396634316130663032373662626263373730313639333633363266373738
+          66633161656162663435616634643065393132623134393734323639393735306134373863356261
+          3034633561323835626234663831646361353238336437633139
+    azure_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38373162323235633166373663616138663765643161313564643232656332303035633464366637
+          3961366635356233336130326230633230376166636637320a643866616664616137613533633466
+          37353539343666663234623533373161653032313831346562373631653831643933366665343362
+          6566653133616261390a326162383231346163626164613538353737333533353062643035336639
+          61303934663832323961656638353139316265376466363738356462303866336238323663326366
+          3730663334353962623236663634623639303462623638646563
+    azure_machine_username: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          64633462306337343430373565643462336365643931393264636438363862346466383330363635
+          3630363239313563303138623338663332653931623961390a626134386131656635313762643337
+          37643336643231333133663437306461346137316430303362316366333132383933373838353835
+          3932383633326164340a383935616135386532613235366232333434313863303763343066353731
+          3434
+
+  tasks:
+
+    - name: Create tower organization
+      tower_organization:
+        name: meteor
+        description: "Only the Meteors"
+        state: present
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+
+    - name: Create Azure Credentials
+      tower_credential:
+        name: azure
+        organization: meteor
+        kind: azure_rm
+        subscription: "{{ azure_subscription }}"
+        username: "{{ azure_username }}"
+        password: "{{ azure_password }}"
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
+    - name: Create Azure Machine Credentials
+      tower_credential:
+        name: azure_ssh
+        organization: meteor
+        kind: ssh
+        ssh_key_data: "{{ lookup('file', '~/.ssh/azure_id_rsa') }}"
+        username: "{{ azure_machine_username }}"
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
+    - name: Create Inventory
+      tower_inventory:
+        name: azure_private
+        organization: meteor
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
+    - name: Create Inventory Source
+      tower_inventory_source:
+        name: azure_private
+        inventory: azure_private
+        credential: azure
+        source: azure_rm
+        source_vars: 
+          use_private_ip: True
+        update_on_launch: yes
+        overwrite: yes
+        overwrite_vars: yes
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
+    - name: Add Tower Project
+      tower_project:
+          name: ML Cat - Azure (dev)
+          description: Is it Cat ?
+          organization: meteor
+          scm_type: git
+          scm_url: https://github.com/automaticdavid/demo_cat_azure.git
+          scm_branch: devel
+          tower_username: "{{ tower_username }}"
+          tower_password: "{{ tower_password }}"
+          tower_host: "{{ tower_hostname }}"
+          state: present
+  
+    - name: Create Job Template for Provisioning
+      tower_job_template:
+        name: 'ML Cat - Azure (dev) - Provision'
+        inventory: azure_private
+        project: ML Cat - Azure (dev)
+        job_type: run
+        playbook: stack.yml
+        credential: azure_ssh
+        extra_vars_path: extra_vars.provision.yml
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+  
+    - name: Create Job Template for Lab Setup
+      tower_job_template:
+        name: 'ML Cat - Azure (dev) - Lab Setup'
+        inventory: azure_private
+        project: ML Cat - Azure (dev)
+        job_type: run
+        playbook: lab_setup.yml
+        credential: azure_ssh
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
+    - name: Additional Tower Settings
+      shell: |
+        tower-cli config host "{{ tower_hostname }}"
+        tower-cli config verify_ssl false
+        tower-cli login --password {{ tower_username }} {{ tower_password }}
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure"
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Lab Setup" --credential "azure"
+        tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Provision" --instance_group "azure"
+        tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Lab Setup" --instance_group "azure"
+        tower-cli credential_type create -n azure_blob --kind cloud --inputs @blob.inputs.yml --injectors @blob.injectors.yml
+        tower-cli credential create -n cat_blob --credential-type 'azure_blob' --organization meteor --inputs @blob.secrets.yml
+        tower-cli credential_type create -n ssh_user --kind cloud --inputs @ssh_user.inputs.yml --injectors @ssh_user.injectors.yml
+        tower-cli credential create -n azure_user --credential-type 'ssh_user' --organization meteor --inputs @azure_user.secrets.yml
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure_user"
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "cat_blob"
+
+
+
+    

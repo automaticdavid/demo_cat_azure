@@ -1,0 +1,6 @@
+scope: foo
+az_count: 2
+app: 'https://github.com/automaticdavid/hot-dog.git'
+version: dcl-v2.1
+az_vm_size: Standard_B2ms
+object_store: blob
