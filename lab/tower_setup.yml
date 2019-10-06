@@ -8,11 +8,11 @@
 
     tower_username: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          62626435643833356565323333623265393263613266323937326262643662303066376665353431
-          6362313866653335636165613437633033326534393464300a653165336361363436363030393037
-          64653635653866323461336138663936636232663430323866313166303463353361383030376535
-          3338346634643237640a613538346537663931353833626337376661333137383364356339663131
-          3164
+          33396262663131653034633866363336613262343732666166313364613761633863316566616162
+          6330633738303532346638346665333935623535336239380a333665663732366136386137623062
+          66383335353637333939633039356534373464383764376132626365326133626134653464636362
+          3966363135613536320a643935653562396461623966636630343238656264363262386164343037
+          3934
     tower_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           36343266333332356461623337616430303462656534643534663064383338313234336431333033
@@ -170,11 +170,14 @@
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Provision" --instance_group "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Lab Setup" --instance_group "azure"
         tower-cli credential_type create -n azure_blob --kind cloud --inputs @blob.inputs.yml --injectors @blob.injectors.yml
-        tower-cli credential create -n cat_blob --credential-type 'azure_blob' --organization meteor --inputs @blob.secrets.yml
         tower-cli credential_type create -n ssh_user --kind cloud --inputs @ssh_user.inputs.yml --injectors @ssh_user.injectors.yml
+        tower-cli credential_type create -n rhsm --kind cloud --inputs @rhsm.inputs.yml --injectors @rhsm.injectors.yml
+        tower-cli credential create -n cat_blob --credential-type 'azure_blob' --organization meteor --inputs @blob.secrets.yml
         tower-cli credential create -n azure_user --credential-type 'ssh_user' --organization meteor --inputs @azure_user.secrets.yml
+        tower-cli credential create -n rhsm --credential-type 'rhsm' --organization meteor --inputs @rhsm.secrets.yml
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure_user"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "cat_blob"
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "rhsm"
 
 
 

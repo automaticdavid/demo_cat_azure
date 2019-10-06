@@ -1,0 +1,12 @@
+fields:
+  - id: rhsm_username
+    type: string
+    label: Subscription manager username
+  - id: rhsm_password
+    type: string
+    label: Subscription manager password
+    secret: true
+required:
+  - rhsm_username
+  - rhsm_password
+
