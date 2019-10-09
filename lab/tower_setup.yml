@@ -128,6 +128,7 @@
           scm_type: git
           scm_url: https://github.com/automaticdavid/demo_cat_azure.git
           scm_branch: devel
+          scm_delete_on_update: yes
           tower_username: "{{ tower_username }}"
           tower_password: "{{ tower_password }}"
           tower_host: "{{ tower_hostname }}"
