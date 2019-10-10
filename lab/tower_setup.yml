@@ -22,11 +22,12 @@
           6231
     tower_hostname: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          32666339633038623066383834363332613632393134633830346536386536366466316434626638
-          3038613834393435323531313163316438396433333537380a393464646232643538623263393734
-          63343430343938633165366666323430366165616331353538326636666339666163333435386266
-          6238363138653536610a353663303034323930306233653938643366326632356132613964633436
-          3235
+          31333838306564616266396138343436323933373432366636386135336264616161633935376562
+          6632363265653831383064303935663163663939613261340a373133633431326437363034313130
+          64636130376534353234373966303762303964623566643732303738303661636366623931323738
+          6466373762653965300a323839383662616439393765303036383137386639323862326163336538
+          6438
+
     azure_subscription: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           62653135646534356165623766393836653563383538323263366464306534326238313063396430
@@ -161,6 +162,19 @@
         tower_host: "{{ tower_hostname }}"
         state: present
 
+    - name: Create Job Template for Lab Teardown
+      tower_job_template:
+        name: 'ML Cat - Azure (dev) - Teardown'
+        inventory: azure_private
+        project: ML Cat - Azure (dev)
+        job_type: run
+        playbook: lab_delete.yml
+        credential: azure_ssh
+        tower_username: "{{ tower_username }}"
+        tower_password: "{{ tower_password }}"
+        tower_host: "{{ tower_hostname }}"
+        state: present
+
     - name: Additional Tower Settings
       shell: |
         tower-cli config host "{{ tower_hostname }}"
@@ -168,6 +182,7 @@
         tower-cli login --password {{ tower_username }} {{ tower_password }}
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Lab Setup" --credential "azure"
+        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Teardown" --credential "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Provision" --instance_group "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Lab Setup" --instance_group "azure"
         tower-cli credential_type create -n azure_blob --kind cloud --inputs @blob.inputs.yml --injectors @blob.injectors.yml
