@@ -1,6 +1,6 @@
 ---
 - name: Create Azure Infrastructure
-  hosts: localhost
+  hosts: ansible
   connection: local
   tasks:
     - name: Including Azure role for lab creation
