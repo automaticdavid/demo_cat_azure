@@ -166,6 +166,17 @@
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure_user"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "rhsm"
 
+    - name: Remove temporary setup files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ rhsm_inputs.path }}"
+        - "{{ ssh_user_inputs.path }}"
+
+
+
+
 
 
     
