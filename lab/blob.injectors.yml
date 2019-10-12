@@ -1,5 +1,0 @@
-extra_vars:
-  az_constring: '{{ az_constring }}'
-  az_key: '{{ az_key }}'
-  az_stor_account: '{{ az_stor_account }}'
-

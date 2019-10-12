@@ -4,61 +4,7 @@
   connection: local
   gather_facts: no
 
-  vars:
-
-    tower_username: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          33396262663131653034633866363336613262343732666166313364613761633863316566616162
-          6330633738303532346638346665333935623535336239380a333665663732366136386137623062
-          66383335353637333939633039356534373464383764376132626365326133626134653464636362
-          3966363135613536320a643935653562396461623966636630343238656264363262386164343037
-          3934
-    tower_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          36343266333332356461623337616430303462656534643534663064383338313234336431333033
-          3336383163353635646466323662643737333862383430610a643461646563643237333834326264
-          66643130666666643639316664383830633734663935316366383832366435623931663530313037
-          6330613936383235310a346562326232373130343964356339383038316333623865336165316433
-          6231
-    tower_hostname: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          64376666356130636563613637633366616533646235666137656432376461633537396132626432
-          6139383164643135346661306435633937656564323362350a393038303232633435396366613935
-          63363039393066393933326562633839616265616533616636333138613562303133656238663564
-          3338353839663435630a386134313163383765323236333636363430326234666562316663326438
-          32643462376137396133373639383931386534323839663735363832356238376130
-
-    azure_subscription: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          62653135646534356165623766393836653563383538323263366464306534326238313063396430
-          6439363165316233656263316436616535373964613437620a306265626539346334653932326330
-          31616234663435643332623263346135396431303538626131333234633464323334613137393231
-          3133653937366239390a353865346133636331613666633230393634303836383234636235613866
-          62316563376666373033646637643130663361326262656233653235643337343630356631363666
-          6138313238313566623634303937386464353830373366303039
-    azure_username: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          30376132623537636533393966333836376235303539303138373032366430366263623736323865
-          3331373466336333626239303861653431356562383261390a336438383637383561376134656638
-          33656634393737343362313138393232316161343963356365646663613637623132373465313234
-          3535353539656466650a396634316130663032373662626263373730313639333633363266373738
-          66633161656162663435616634643065393132623134393734323639393735306134373863356261
-          3034633561323835626234663831646361353238336437633139
-    azure_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          38373162323235633166373663616138663765643161313564643232656332303035633464366637
-          3961366635356233336130326230633230376166636637320a643866616664616137613533633466
-          37353539343666663234623533373161653032313831346562373631653831643933366665343362
-          6566653133616261390a326162383231346163626164613538353737333533353062643035336639
-          61303934663832323961656638353139316265376466363738356462303866336238323663326366
-          3730663334353962623236663634623639303462623638646563
-    azure_machine_username: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          64633462306337343430373565643462336365643931393264636438363862346466383330363635
-          3630363239313563303138623338663332653931623961390a626134386131656635313762643337
-          37643336643231333133663437306461346137316430303362316366333132383933373838353835
-          3932383633326164340a383935616135386532613235366232333434313863303763343066353731
-          3434
+  vars_files: lab-credentials.secret.yml
 
   tasks:
 
@@ -89,7 +35,7 @@
         name: azure_ssh
         organization: meteor
         kind: ssh
-        ssh_key_data: "{{ lookup('file', '~/.ssh/azure_id_rsa') }}"
+        ssh_key_data: "{{ lookup('file', azure_machine_private_key_path) }}"
         username: "{{ azure_machine_username }}"
         tower_username: "{{ tower_username }}"
         tower_password: "{{ tower_password }}"
@@ -137,7 +83,7 @@
       
     - name: Wait for project sync
       pause: 
-        seconds: 30 
+        seconds: 90 
   
     - name: Create Job Template for Provisioning
       tower_job_template:
@@ -179,6 +125,30 @@
         tower_host: "{{ tower_hostname }}"
         state: present
 
+    - name: Create temporary file for ssh_user credential input data
+      tempfile:
+        state: file
+        suffix: temp
+      register: ssh_user_inputs
+
+    - name: Template ssh_user credential input data
+      template:
+        src: ssh_user.j2
+        dest: "{{ ssh_user_inputs.path }}"
+      vars:
+        ssh_key: "{{ lookup('file', ssh_public_key_path) }}"
+
+    - name: Create temporary file for rhsm credential input data
+      tempfile:
+        state: file
+        suffix: temp
+      register: rhsm_inputs
+    
+    - name: Template rhsm credential input data
+      template:
+        src: rhsm.j2
+        dest: "{{ rhsm_inputs.path }}"
+
     - name: Additional Tower Settings
       shell: |
         tower-cli config host "{{ tower_hostname }}"
@@ -189,14 +159,11 @@
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Teardown" --credential "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Provision" --instance_group "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Lab Setup" --instance_group "azure"
-        tower-cli credential_type create -n azure_blob --kind cloud --inputs @blob.inputs.yml --injectors @blob.injectors.yml
         tower-cli credential_type create -n ssh_user --kind cloud --inputs @ssh_user.inputs.yml --injectors @ssh_user.injectors.yml
         tower-cli credential_type create -n rhsm --kind cloud --inputs @rhsm.inputs.yml --injectors @rhsm.injectors.yml
-        tower-cli credential create -n cat_blob --credential-type 'azure_blob' --organization meteor --inputs @blob.secrets.yml
-        tower-cli credential create -n azure_user --credential-type 'ssh_user' --organization meteor --inputs @azure_user.secrets.yml
-        tower-cli credential create -n rhsm --credential-type 'rhsm' --organization meteor --inputs @rhsm.secrets.yml
+        tower-cli credential create -n azure_user --credential-type 'ssh_user' --organization meteor --inputs @"{{ ssh_user_inputs.path }}"
+        tower-cli credential create -n rhsm --credential-type 'rhsm' --organization meteor --inputs @"{{ rhsm_inputs.path }}"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "azure_user"
-        tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "cat_blob"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Provision" --credential "rhsm"
 
 
