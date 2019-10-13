@@ -158,7 +158,6 @@
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Lab Setup" --credential "azure"
         tower-cli job_template associate_credential --job-template "ML Cat - Azure (dev) - Teardown" --credential "azure"
         tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Provision" --instance_group "azure"
-        tower-cli job_template associate_ig --job_template "ML Cat - Azure (dev) - Lab Setup" --instance_group "azure"
         tower-cli credential_type create -n ssh_user --kind cloud --inputs @ssh_user.inputs.yml --injectors @ssh_user.injectors.yml
         tower-cli credential_type create -n rhsm --kind cloud --inputs @rhsm.inputs.yml --injectors @rhsm.injectors.yml
         tower-cli credential create -n azure_user --credential-type 'ssh_user' --organization meteor --inputs @"{{ ssh_user_inputs.path }}"
