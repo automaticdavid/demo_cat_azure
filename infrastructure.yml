@@ -2,11 +2,14 @@
 - name: Create Azure Infrastructure
   hosts: ansible
   connection: local
+
   tasks:
+
     - name: Including Azure role for lab creation
       include_role:
         name: azure
         tasks_from: azure_env_setup
+        
     - name: Including Azure role for infrastructure creation
       include_role:
         name: azure
