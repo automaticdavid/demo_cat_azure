@@ -7,7 +7,7 @@ This repo sets up your exisitng Ansible Tower install to deploy the "Is It Cat?"
 What you need   
 ---
 
-A Tower setup with an isolated node named "ansible" in Azure. 
+A Tower setup with an isolated node in Azure. This node needs git to be installed and the jmespath pip module in the default venv.
 
 Go to the  `lab/` directory and complete up the `lab-credentials.yml.txt` file.  
 
